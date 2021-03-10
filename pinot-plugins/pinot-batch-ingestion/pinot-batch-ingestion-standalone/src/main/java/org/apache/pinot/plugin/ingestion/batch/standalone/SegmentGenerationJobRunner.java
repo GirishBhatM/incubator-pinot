@@ -102,6 +102,9 @@ public class SegmentGenerationJobRunner implements IngestionJobRunner {
     } catch (URISyntaxException e) {
       throw new RuntimeException("Invalid property: 'outputDirURI'", e);
     }
+    //if schemes don't exists then register
+    registerIfNotExists();
+    
     _outputDirFS = PinotFSFactory.create(_outputDirURI.getScheme());
     try {
       if (!_outputDirFS.exists(_outputDirURI)) {
@@ -286,5 +289,13 @@ public class SegmentGenerationJobRunner implements IngestionJobRunner {
         FileUtils.deleteQuietly(localInputDataFile);
       }
     });
+  }
+  private void registerIfNotExists() {
+	  List<PinotFSSpec> pinotFSSpecs = _spec.getPinotFSSpecs();
+	    for (PinotFSSpec pinotFSSpec : pinotFSSpecs) {
+	      if(!PinotFSFactory.isSchemeSupported(pinotFSSpec.getScheme())) {	
+	    	  PinotFSFactory.register(pinotFSSpec.getScheme(), pinotFSSpec.getClassName(), new PinotConfiguration(pinotFSSpec));
+	      }
+	    }
   }
 }
